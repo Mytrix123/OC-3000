@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_onnxruntime/flutter_onnxruntime.dart';
 import 'package:image/image.dart' as img_lib;
 import 'package:image_picker/image_picker.dart';
+import 'package:oc_3000/home.dart';
 import 'package:path_provider/path_provider.dart';
 
 void main() {
@@ -22,6 +23,7 @@ class MyApp extends StatelessWidget {
       title: "ONNX Tester",
       theme: ThemeData(primarySwatch: Colors.blue),
       home: const OnnxTesterPage(),
+      // home: HomeWidget(),
     );
   }
 }
@@ -85,8 +87,9 @@ class _OnnxTesterPageState extends State<OnnxTesterPage> {
     }
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _pickImage({required String source}) async {
     final picker = ImagePicker();
+    var pickedFile;
     if (_selectedImage != null) {
       _selectedImage!.deleteSync();
       if (directory.existsSync()) {
@@ -106,7 +109,12 @@ class _OnnxTesterPageState extends State<OnnxTesterPage> {
         print('Cache directory does not exist.');
       }
     }
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (source == 'camera'){
+      pickedFile = await picker.pickImage(source: ImageSource.camera);
+    }
+    if (source == 'gallery') {
+      pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    }
     if (pickedFile != null) {
       setState(() {
         _selectedImage = File(pickedFile.path);
@@ -377,6 +385,7 @@ class _OnnxTesterPageState extends State<OnnxTesterPage> {
     setState(() {
       _outputImage = outputFile;
       isProcessing = false;
+      _status = "Proses selesai";
     });
   }
 
@@ -384,47 +393,61 @@ class _OnnxTesterPageState extends State<OnnxTesterPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('OC 3000 - Prototype')),
-      body: SingleChildScrollView(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(_status),
-            const SizedBox(height: 20),
+      body: Center(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text("Status: $_status", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),),
+              const SizedBox(height: 20),
 
-            if (_selectedImage != null)
-              Column(
-                children: [
-                  const Text('Input Image:'),
-                  Image.file(_selectedImage!, height: 200),
-                ],
-              ),
-            // Image.file(_selectedImage!, height: 200),
-            if (!isProcessing)
-              ElevatedButton(
-                onPressed: _pickImage,
-                child: const Text('Pilih Image'),
-              ),
-            // if (isProcessing)
-            //    CircularProgressIndicator(),
 
-            // ElevatedButton(
-            //   onPressed: _runInference,
-            //   child: const Text('Hitung TBS'),
-            // ),
-            if (_outputImage != null)
-              Column(
-                children: [
-                  const Text('Output Image:'),
-                  Image.file(
-                    _outputImage!,
-                    height: 300,
-                    // key: UniqueKey(),  // Force reload to avoid caching
-                  ),
-                  Text('Jumlah TBS terdeteksi: $_detectedCount'),
-                ],
-              ),
-            // else CircularProgressIndicator(),
-          ],
+              // Image.file(_selectedImage!, height: 200),
+              if (!isProcessing)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                      onPressed: (){_pickImage(source: 'camera');},
+                      child: const Text('Camera'),
+                    ),
+                    SizedBox(width: 20,),
+                    ElevatedButton(
+                      onPressed: (){_pickImage(source: 'gallery');},
+                      child: const Text('Gallery'),
+                    ),
+                  ],
+                ),
+              // if (isProcessing)
+              //    CircularProgressIndicator(),
+
+              // ElevatedButton(
+              //   onPressed: _runInference,
+              //   child: const Text('Hitung TBS'),
+              // ),
+
+              if (_selectedImage != null)
+                Column(
+                  children: [
+                    const Text('Input Image:'),
+                    Image.file(_selectedImage!, height: 200),
+                  ],
+                ),
+
+              if (_outputImage != null)
+                Column(
+                  children: [
+                    const Text('Output Image:'),
+                    Image.file(
+                      _outputImage!,
+                      height: 300,
+                      // key: UniqueKey(),  // Force reload to avoid caching
+                    ),
+                    Text('Jumlah TBS terdeteksi: $_detectedCount'),
+                  ],
+                ),
+            ],
+          ),
         ),
       ),
     );
